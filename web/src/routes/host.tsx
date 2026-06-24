@@ -11,21 +11,25 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 
 const nav = [
-  { to: "/host", label: "Дашборд", icon: LayoutDashboard, exact: true },
-  { to: "/host/objects", label: "Объекты", icon: Home },
-  { to: "/host/rooms", label: "Комнаты", icon: Bed },
-  { to: "/host/bookings", label: "Бронирования", icon: Calendar },
-  { to: "/host/calendar", label: "Календарь", icon: CalendarDays },
-  { to: "/host/reviews", label: "Отзывы", icon: Star },
-  { to: "/host/finance", label: "Финансы", icon: Wallet },
-  { to: "/host/settings", label: "Моя гостиница", icon: Building2 },
+  { to: "/host", labelKey: "host.navDashboard", icon: LayoutDashboard, exact: true },
+  { to: "/host/objects", labelKey: "host.navObjects", icon: Home },
+  { to: "/host/rooms", labelKey: "host.navRooms", icon: Bed },
+  { to: "/host/bookings", labelKey: "host.navBookings", icon: Calendar },
+  { to: "/host/calendar", labelKey: "host.navCalendar", icon: CalendarDays },
+  { to: "/host/reviews", labelKey: "host.navReviews", icon: Star },
+  { to: "/host/finance", labelKey: "host.navFinance", icon: Wallet },
+  { to: "/host/settings", labelKey: "host.navSettings", icon: Building2 },
 ];
 
 export default function HostLayout() {
+  const { t } = useI18n();
+  const { user } = useAuth();
   const pathname = useLocation().pathname;
-  useDocumentTitle("Кабинет ресепшена — MEIMAN");
+  useDocumentTitle(t("host.docTitle"));
   return (
     <AppShell>
       <div className="container-app grid gap-8 py-8 lg:grid-cols-[240px_1fr]">
@@ -33,9 +37,11 @@ export default function HostLayout() {
           <div className="rounded-2xl border border-border/70 bg-card p-3">
             <div className="px-3 py-2">
               <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Ресепшен
+                {t("host.panelLabel")}
               </div>
-              <div className="mt-0.5 font-display text-base font-bold">Капсула «Булан»</div>
+              <div className="mt-0.5 font-display text-base font-bold">
+                {user?.name ?? t("nav.host")}
+              </div>
             </div>
             <nav className="mt-2 space-y-0.5">
               {nav.map((n) => {
@@ -54,7 +60,7 @@ export default function HostLayout() {
                     }`}
                   >
                     <n.icon className="h-4 w-4" />
-                    {n.label}
+                    {t(n.labelKey)}
                   </Link>
                 );
               })}

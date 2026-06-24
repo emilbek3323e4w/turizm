@@ -102,7 +102,7 @@ export default function CheckoutPage() {
       const detail = isAxiosError(err)
         ? (err.response?.data as { detail?: string })?.detail
         : undefined;
-      setError(detail ?? "Не удалось создать бронирование. Попробуйте ещё раз.");
+      setError(detail ?? t("co.createError"));
     } finally {
       setSubmitting(false);
     }
