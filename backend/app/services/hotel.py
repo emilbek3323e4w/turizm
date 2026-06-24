@@ -55,9 +55,9 @@ class HotelService:
         await cls._check_permission(hotel, user_id, is_admin)
         
         # update fields
-        updated_hotel = await HotelRepository.update(hotel, req, db)
+        await HotelRepository.update(hotel, req, db)
         await db.commit()
-        return updated_hotel
+        return await HotelRepository.get_by_id_with_relations(hotel_id, db)
 
     @classmethod
     async def delete_hotel(cls, hotel_id: int, db: AsyncSession):
@@ -75,7 +75,7 @@ class HotelService:
         
         hotel.status = status
         await db.commit()
-        return hotel
+        return await HotelRepository.get_by_id_with_relations(hotel_id, db)
 
     @classmethod
     async def set_amenities(cls, hotel_id: int, user_id: int, is_admin: bool, amenity_ids: list[int], db: AsyncSession) -> Hotel:

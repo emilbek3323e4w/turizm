@@ -9,6 +9,26 @@ from app.schemas.payment import PaymentCreate, PaymentWebhook
 class PaymentService:
 
     @classmethod
+    async def get_booking_payments(cls, booking_id: int, user_id: int, is_admin: bool, db: AsyncSession) -> list[Payment]:
+        booking = await BookingRepository.get_by_id(booking_id, db)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        if not is_admin and booking.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Permission denied: not the booking owner")
+        result = await db.execute(select(Payment).where(Payment.booking_id == booking_id))
+        return list(result.scalars().all())
+
+    @classmethod
+    async def get_payment(cls, payment_id: int, user_id: int, is_admin: bool, db: AsyncSession) -> Payment:
+        payment = await PaymentRepository.get_by_id(payment_id, db)
+        if not payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+        booking = await BookingRepository.get_by_id(payment.booking_id, db)
+        if not is_admin and (booking is None or booking.user_id != user_id):
+            raise HTTPException(status_code=403, detail="Permission denied: not the booking owner")
+        return payment
+
+    @classmethod
     async def create_payment(cls, booking_id: int, user_id: int, req: PaymentCreate, db: AsyncSession) -> Payment:
         booking = await BookingRepository.get_by_id(booking_id, db)
         if not booking:

@@ -26,7 +26,7 @@ class NotificationService:
 
     @classmethod
     async def mark_all_as_read(cls, db: AsyncSession, user_id: int):
-        notifications = await NotificationRepository.get_all(db, user_id=user_id)
+        notifications = await NotificationRepository.get_by_user_id(user_id, db)
         for notif in notifications:
             notif.is_read = True
         await db.commit()
@@ -34,4 +34,4 @@ class NotificationService:
     @classmethod
     async def get_user_notifications(cls, db: AsyncSession, user_id: int, skip: int = 0, limit: int = 20):
         # В идеале нужно сделать пагинацию в репозитории, но для простоты:
-        return await NotificationRepository.get_all(db, user_id=user_id)
+        return await NotificationRepository.get_by_user_id(user_id, db)

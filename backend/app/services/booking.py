@@ -77,6 +77,7 @@ class BookingService:
         )
 
         await db.commit()
+        await db.refresh(booking)
         return booking
 
     @classmethod
@@ -103,6 +104,7 @@ class BookingService:
         )
 
         await db.commit()
+        await db.refresh(booking)
         return booking
 
     @classmethod
@@ -129,6 +131,7 @@ class BookingService:
         )
 
         await db.commit()
+        await db.refresh(booking)
         return booking
 
     @classmethod
@@ -188,6 +191,7 @@ class BookingService:
 
         booking.status = BookingStatus.checked_in
         await db.commit()
+        await db.refresh(booking)
         return booking
 
     @classmethod
@@ -205,4 +209,5 @@ class BookingService:
         # Transition directly to completed to allow reviews
         booking.status = BookingStatus.completed
         await db.commit()
+        await db.refresh(booking)
         return booking
