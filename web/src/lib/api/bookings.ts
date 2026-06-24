@@ -6,6 +6,7 @@ export type BookingStatus =
   | "confirmed"
   | "checked_in"
   | "checked_out"
+  | "completed"
   | "cancelled"
   | "rejected";
 
@@ -55,3 +56,24 @@ export async function cancelBooking(bookingId: number): Promise<BookingResponse>
   const { data } = await api.patch<BookingResponse>(`/bookings/${bookingId}/cancel`);
   return data;
 }
+
+// --- Reception side (host manages bookings for their hotels) ----------------
+
+/** GET /api/v1/reception/hotels/{id}/bookings — bookings for one of my hotels. */
+export async function listHotelBookings(hotelId: number): Promise<BookingResponse[]> {
+  const { data } = await api.get<BookingResponse[]>(`/reception/hotels/${hotelId}/bookings`);
+  return data;
+}
+
+async function receptionBookingAction(
+  bookingId: number,
+  action: "confirm" | "reject" | "check-in" | "check-out",
+): Promise<BookingResponse> {
+  const { data } = await api.patch<BookingResponse>(`/reception/bookings/${bookingId}/${action}`);
+  return data;
+}
+
+export const confirmBooking = (id: number) => receptionBookingAction(id, "confirm");
+export const rejectBooking = (id: number) => receptionBookingAction(id, "reject");
+export const checkInBooking = (id: number) => receptionBookingAction(id, "check-in");
+export const checkOutBooking = (id: number) => receptionBookingAction(id, "check-out");

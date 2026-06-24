@@ -28,7 +28,7 @@ const TAB_STATUSES: Record<(typeof tabKeys)[number], BookingStatus[] | null> = {
   "mb.tabAll": null,
   "mb.tabPending": ["pending"],
   "mb.tabConfirmed": ["confirmed", "checked_in"],
-  "mb.tabCompleted": ["checked_out"],
+  "mb.tabCompleted": ["checked_out", "completed"],
   "mb.tabCancelled": ["cancelled", "rejected"],
 };
 
@@ -37,6 +37,7 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
   confirmed: "Подтверждено",
   checked_in: "Заселён",
   checked_out: "Завершено",
+  completed: "Завершено",
   cancelled: "Отменено",
   rejected: "Отклонено",
 };
