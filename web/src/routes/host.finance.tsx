@@ -1,29 +1,32 @@
 import { Wallet, Calendar, PiggyBank, TrendingUp } from "lucide-react";
-
-const periods = [
-  { label: "Доход за день", value: "8 200 сом", icon: Wallet },
-  { label: "Доход за неделю", value: "54 600 сом", icon: Wallet },
-  { label: "Доход за месяц", value: "184 500 сом", icon: Wallet },
-];
-
-const extra = [
-  { label: "Количество бронирований", value: "32", icon: Calendar },
-  { label: "Полученные задатки", value: "55 350 сом", icon: PiggyBank },
-];
+import { useI18n } from "@/lib/i18n";
 
 export default function HostFinance() {
+  const { t } = useI18n();
+  const kgs = t("common.kgs");
+
+  const periods = [
+    { label: t("hf.day"), value: `8 200 ${kgs}`, icon: Wallet },
+    { label: t("hf.week"), value: `54 600 ${kgs}`, icon: Wallet },
+    { label: t("hf.month"), value: `184 500 ${kgs}`, icon: Wallet },
+  ];
+  const extra = [
+    { label: t("hf.bookingsCount"), value: "32", icon: Calendar },
+    { label: t("hf.deposits"), value: `55 350 ${kgs}`, icon: PiggyBank },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-extrabold">Доходы</h1>
-        <p className="mt-1 text-muted-foreground">Финансовая сводка по вашему объекту</p>
+        <h1 className="font-display text-3xl font-extrabold">{t("hf.title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("hf.subtitle")}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {periods.map((p) => (
           <div key={p.label} className="rounded-2xl border border-border/70 bg-card p-5">
             <div className="flex items-center gap-1 text-xs font-semibold text-success">
-              <TrendingUp className="h-3 w-3" /> Доход
+              <TrendingUp className="h-3 w-3" /> {t("hf.revenue")}
             </div>
             <div className="mt-3 font-display text-2xl font-extrabold">{p.value}</div>
             <div className="text-sm text-muted-foreground">{p.label}</div>
@@ -49,7 +52,7 @@ export default function HostFinance() {
       </div>
 
       <div className="rounded-2xl border border-border/70 bg-card p-6">
-        <h2 className="font-display text-lg font-bold">Доход по неделям</h2>
+        <h2 className="font-display text-lg font-bold">{t("hf.weekly")}</h2>
         <div className="mt-6 flex h-40 items-end gap-3">
           {[55, 70, 48, 82, 90, 65, 88].map((h, i) => (
             <div key={i} className="flex-1">

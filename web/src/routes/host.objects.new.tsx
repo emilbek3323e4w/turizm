@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useI18n } from "@/lib/i18n";
 import {
   getHotelTypes,
   getAmenities,
@@ -36,15 +37,14 @@ function parseCoords(input: string): { latitude: number | null; longitude: numbe
 }
 
 export default function NewObjectWizard() {
-  useDocumentTitle("Новый объект — MEIMAN");
+  const { t } = useI18n();
+  useDocumentTitle(t("no.docTitle"));
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
 
-  // Reference data from the backend.
   const [hotelTypes, setHotelTypes] = useState<HotelTypeResponse[]>([]);
   const [amenityList, setAmenityList] = useState<AmenityResponse[]>([]);
 
-  // Form state.
   const [hotelTypeId, setHotelTypeId] = useState<number | null>(null);
   const [amenities, setAmenities] = useState<number[]>([]);
   const [name, setName] = useState("");
@@ -61,8 +61,12 @@ export default function NewObjectWizard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getHotelTypes().then(setHotelTypes).catch(() => setHotelTypes([]));
-    getAmenities().then(setAmenityList).catch(() => setAmenityList([]));
+    getHotelTypes()
+      .then(setHotelTypes)
+      .catch(() => setHotelTypes([]));
+    getAmenities()
+      .then(setAmenityList)
+      .catch(() => setAmenityList([]));
   }, []);
 
   function describeError(err: unknown): string {
@@ -78,30 +82,28 @@ export default function NewObjectWizard() {
       }
       return err.message;
     }
-    return err instanceof Error ? err.message : "Не удалось создать объект";
+    return err instanceof Error ? err.message : t("no.createError");
   }
 
   async function handlePublish() {
     setError(null);
-
     if (hotelTypeId === null) {
-      setError("Выберите категорию жилья (шаг 1).");
+      setError(t("no.errType"));
       setStep(1);
       return;
     }
     if (name.trim().length < 2 || description.trim().length < 10 || address.trim().length < 5) {
-      setError("Заполните название, адрес (от 5 симв.) и описание (от 10 симв.) на шаге 2.");
+      setError(t("no.errFields"));
       setStep(2);
       return;
     }
     if (phone.trim().length < 5 || whatsapp.trim().length < 5) {
-      setError("Укажите телефон и WhatsApp на шаге 2.");
+      setError(t("no.errContacts"));
       setStep(2);
       return;
     }
 
     const { latitude, longitude } = parseCoords(coords);
-
     setSubmitting(true);
     try {
       const hotel = await createHotel({
@@ -117,13 +119,10 @@ export default function NewObjectWizard() {
         check_in_time: checkIn,
         check_out_time: checkOut,
       });
-
       if (amenities.length > 0) {
         await setHotelAmenities(hotel.id, amenities);
       }
-
       addMyHotelId(hotel.id);
-      console.info("[host] ✅ объект создан:", hotel);
       navigate("/host/objects");
     } catch (err) {
       setError(describeError(err));
@@ -138,7 +137,6 @@ export default function NewObjectWizard() {
         <Intro onStart={() => setStep(1)} />
       ) : (
         <div className="rounded-3xl border border-border/70 bg-card p-6 shadow-[var(--shadow-soft)] md:p-10">
-          {/* Progress */}
           <div className="grid grid-cols-4 gap-2">
             {[1, 2, 3, 4].map((i) => (
               <div
@@ -147,7 +145,7 @@ export default function NewObjectWizard() {
               />
             ))}
           </div>
-          <div className="mt-3 text-sm text-muted-foreground">Шаг {step} из 4</div>
+          <div className="mt-3 text-sm text-muted-foreground">{t("no.stepOf", { n: step })}</div>
 
           {error && (
             <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
@@ -156,9 +154,9 @@ export default function NewObjectWizard() {
           )}
 
           {step === 1 && (
-            <Step title="Выберите категорию вашего жилья">
+            <Step title={t("no.step1Title")}>
               {hotelTypes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Загрузка категорий…</p>
+                <p className="text-sm text-muted-foreground">{t("no.loadingTypes")}</p>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {hotelTypes.map((c) => {
@@ -191,30 +189,30 @@ export default function NewObjectWizard() {
           )}
 
           {step === 2 && (
-            <Step title="Расскажите о вашем объекте">
+            <Step title={t("no.step2Title")}>
               <div className="grid gap-5 sm:grid-cols-2">
-                <Field label="Название объекта">
+                <Field label={t("no.fName")}>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Например, Капсула «Булан»"
+                    placeholder={t("no.fNamePh")}
                   />
                 </Field>
-                <Field label="Адрес">
+                <Field label={t("no.fAddress")}>
                   <Input
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="с. Аркыт, Сары-Челек"
+                    placeholder={t("no.fAddressPh")}
                   />
                 </Field>
-                <Field label="Координаты на карте">
+                <Field label={t("no.fCoords")}>
                   <Input
                     value={coords}
                     onChange={(e) => setCoords(e.target.value)}
                     placeholder="41.8500, 71.9500"
                   />
                 </Field>
-                <Field label="Email">
+                <Field label={t("no.fEmail")}>
                   <Input
                     type="email"
                     value={email}
@@ -222,7 +220,7 @@ export default function NewObjectWizard() {
                     placeholder="hotel@example.com"
                   />
                 </Field>
-                <Field label="Телефон">
+                <Field label={t("no.fPhone")}>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -236,14 +234,10 @@ export default function NewObjectWizard() {
                     placeholder="+996 700 00 00 00"
                   />
                 </Field>
-                <Field label="Время заезда">
-                  <Input
-                    type="time"
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                  />
+                <Field label={t("no.fCheckIn")}>
+                  <Input type="time" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
                 </Field>
-                <Field label="Время выезда">
+                <Field label={t("no.fCheckOut")}>
                   <Input
                     type="time"
                     value={checkOut}
@@ -251,18 +245,18 @@ export default function NewObjectWizard() {
                   />
                 </Field>
                 <div className="sm:col-span-2">
-                  <Field label="Описание">
+                  <Field label={t("no.fDesc")}>
                     <Textarea
                       rows={5}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Опишите, что делает ваш объект особенным (минимум 10 символов)"
+                      placeholder={t("no.fDescPh")}
                     />
                   </Field>
                 </div>
                 <div className="sm:col-span-2">
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Удобства
+                    {t("no.amenities")}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {amenityList.map((a) => {
@@ -292,19 +286,14 @@ export default function NewObjectWizard() {
           )}
 
           {step === 3 && (
-            <Step
-              title="Добавьте фото вашего объекта"
-              subtitle="Загрузка фото появится позже. Пока можно пропустить этот шаг — объект создастся без фото."
-            >
+            <Step title={t("no.step3Title")} subtitle={t("no.step3Sub")}>
               <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-surface p-12 transition hover:border-primary hover:bg-accent/40">
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                   <ImageIcon className="h-6 w-6 text-muted-foreground" />
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  Перетащите файл сюда или нажмите для выбора
-                </span>
+                <span className="text-sm text-muted-foreground">{t("no.dropHint")}</span>
                 <span className="inline-flex items-center gap-2 font-semibold text-primary">
-                  <Upload className="h-4 w-4" /> Загрузить с устройства
+                  <Upload className="h-4 w-4" /> {t("no.uploadBtn")}
                 </span>
                 <input type="file" multiple accept="image/*" className="hidden" />
               </label>
@@ -312,24 +301,16 @@ export default function NewObjectWizard() {
           )}
 
           {step === 4 && (
-            <Step
-              title="Завершение"
-              subtitle="Проверьте данные и опубликуйте объект. После публикации он пройдёт модерацию."
-            >
+            <Step title={t("no.step4Title")} subtitle={t("no.step4Sub")}>
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold">
-                  <Check className="h-4 w-4 text-success" /> После публикации объект пройдёт
-                  модерацию (статус «pending»)
+                  <Check className="h-4 w-4 text-success" /> {t("no.modNote")}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Он сразу появится в разделе «Мои объекты». Цены и номера можно будет добавить
-                  после создания.
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("no.modNote2")}</p>
               </div>
             </Step>
           )}
 
-          {/* Footer */}
           <div className="mt-10 flex items-center justify-between border-t border-border/70 pt-5">
             <Button
               variant="ghost"
@@ -337,12 +318,12 @@ export default function NewObjectWizard() {
               className="gap-2"
               disabled={submitting}
             >
-              <ArrowLeft className="h-4 w-4" /> Назад
+              <ArrowLeft className="h-4 w-4" /> {t("no.back")}
             </Button>
             <div className="flex gap-2">
               {step < 4 ? (
                 <Button onClick={() => setStep((s) => s + 1)} className="gap-2 rounded-xl">
-                  Продолжить <ArrowRight className="h-4 w-4" />
+                  {t("no.continue")} <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
                 <Button onClick={handlePublish} disabled={submitting} className="gap-2 rounded-xl">
@@ -350,7 +331,7 @@ export default function NewObjectWizard() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      Опубликовать <Check className="h-4 w-4" />
+                      {t("no.publish")} <Check className="h-4 w-4" />
                     </>
                   )}
                 </Button>
@@ -364,6 +345,13 @@ export default function NewObjectWizard() {
 }
 
 function Intro({ onStart }: { onStart: () => void }) {
+  const { t } = useI18n();
+  const steps = [
+    { t: t("no.s1t"), d: t("no.s1d") },
+    { t: t("no.s2t"), d: t("no.s2d") },
+    { t: t("no.s3t"), d: t("no.s3d") },
+    { t: t("no.s4t"), d: t("no.s4d") },
+  ];
   return (
     <div className="rounded-3xl border border-border/70 bg-surface p-8 md:p-16">
       <div className="mx-auto max-w-2xl text-center">
@@ -371,29 +359,11 @@ function Intro({ onStart }: { onStart: () => void }) {
           <Home className="h-9 w-9" />
         </div>
         <h1 className="mt-8 font-display text-4xl font-extrabold leading-tight text-primary md:text-6xl">
-          Сдавайте жильё
-          <br />с нами
+          {t("no.introTitle")}
         </h1>
       </div>
       <div className="mx-auto mt-12 grid max-w-3xl gap-5 rounded-2xl bg-card p-8 shadow-[var(--shadow-card)] sm:grid-cols-2">
-        {[
-          {
-            t: "Расскажите о вашем жилье",
-            d: "Укажите тип объекта, местоположение и сколько гостей может разместиться",
-          },
-          {
-            t: "Сделайте его привлекательным",
-            d: "Добавьте фото, заголовок и удобства для гостей",
-          },
-          {
-            t: "Укажите условия проживания",
-            d: "Установите цену, правила и отметьте доступные даты для бронирования",
-          },
-          {
-            t: "Завершение",
-            d: "Укажите формат сотрудничества и свои данные, чтобы завершить создание объявления",
-          },
-        ].map((s, i) => (
+        {steps.map((s, i) => (
           <div key={i} className="flex gap-3">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 font-bold text-primary">
               {i + 1}
@@ -407,10 +377,10 @@ function Intro({ onStart }: { onStart: () => void }) {
       </div>
       <div className="mt-10 flex justify-between">
         <Button variant="ghost" asChild>
-          <Link to="/host">Назад</Link>
+          <Link to="/host">{t("no.back")}</Link>
         </Button>
         <Button size="lg" onClick={onStart} className="rounded-xl px-8">
-          Начать
+          {t("no.start")}
         </Button>
       </div>
     </div>

@@ -1,27 +1,32 @@
+import { useI18n } from "@/lib/i18n";
+
 const days = Array.from({ length: 30 }, (_, i) => i + 1);
 const statuses: ("free" | "booked" | "checked")[] = days.map((d) =>
   d % 7 === 0 ? "checked" : d % 3 === 0 ? "booked" : "free",
 );
 
+const WEEKDAY_KEYS = ["hc.mon", "hc.tue", "hc.wed", "hc.thu", "hc.fri", "hc.sat", "hc.sun"];
+
 export default function HostCalendar() {
+  const { t } = useI18n();
   return (
     <div>
-      <h1 className="font-display text-3xl font-extrabold">Календарь занятости</h1>
-      <p className="mt-1 text-muted-foreground">Июль 2026 · Капсула «Булан»</p>
+      <h1 className="font-display text-3xl font-extrabold">{t("hc.title")}</h1>
+      <p className="mt-1 text-muted-foreground">{t("hc.subtitle")}</p>
 
       <div className="mt-6 flex flex-wrap gap-4 text-sm">
-        <Legend color="bg-success" label="Свободно" />
-        <Legend color="bg-warning" label="Забронировано" />
-        <Legend color="bg-destructive" label="Заселены" />
+        <Legend color="bg-success" label={t("hc.free")} />
+        <Legend color="bg-warning" label={t("hc.booked")} />
+        <Legend color="bg-destructive" label={t("hc.occupied")} />
       </div>
 
       <div className="mt-6 grid grid-cols-7 gap-2 rounded-2xl border border-border/70 bg-card p-4">
-        {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((d) => (
+        {WEEKDAY_KEYS.map((k) => (
           <div
-            key={d}
+            key={k}
             className="py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
           >
-            {d}
+            {t(k)}
           </div>
         ))}
         {days.map((d, i) => {
