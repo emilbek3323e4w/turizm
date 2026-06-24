@@ -20,6 +20,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { type Estate } from "@/lib/mock-data";
 import { getEstate, isFavorite, toggleFavorite } from "@/lib/api";
+import { DatePicker } from "@/components/DatePicker";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";
 
@@ -336,20 +337,10 @@ function EstateView({ estate }: { estate: Estate }) {
               <div className="mt-5 overflow-hidden rounded-xl border border-border">
                 <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
                   <Field label={t("search.checkin")} icon={CalendarIcon}>
-                    <input
-                      type="date"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none"
-                    />
+                    <DatePicker value={checkIn} onChange={setCheckIn} />
                   </Field>
                   <Field label={t("search.checkout")} icon={CalendarIcon}>
-                    <input
-                      type="date"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none"
-                    />
+                    <DatePicker value={checkOut} onChange={setCheckOut} min={checkIn} />
                   </Field>
                 </div>
                 <Field label={t("search.guests")} icon={Users}>

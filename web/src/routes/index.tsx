@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/DatePicker";
 import { categories, type Estate } from "@/lib/mock-data";
 import heroImg from "@/assets/hero.jpg";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -112,11 +112,10 @@ export default function HomePage() {
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("search.checkin")}
                   </div>
-                  <input
-                    type="date"
-                    className="w-full bg-transparent text-sm font-medium outline-none"
+                  <DatePicker
                     value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
+                    onChange={setCheckIn}
+                    placeholder={t("search.pickDate")}
                   />
                 </div>
               </label>
@@ -126,12 +125,11 @@ export default function HomePage() {
                   <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("search.checkout")}
                   </div>
-                  <input
-                    type="date"
-                    className="w-full bg-transparent text-sm font-medium outline-none"
+                  <DatePicker
                     value={checkOut}
+                    onChange={setCheckOut}
                     min={checkIn || undefined}
-                    onChange={(e) => setCheckOut(e.target.value)}
+                    placeholder={t("search.pickDate")}
                   />
                 </div>
               </label>
