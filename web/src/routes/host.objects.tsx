@@ -109,7 +109,8 @@ export default function HostObjects() {
       ) : (
         <div className="mt-6 grid gap-4">
           {objects.map((e) => {
-            const cover = e.images.find((img) => img.is_main)?.url ?? e.images[0]?.url;
+            const rawCover = e.images.find((img) => img.is_main)?.url ?? e.images[0]?.url;
+            const cover = rawCover ? mediaUrl(rawCover) : undefined;
             return (
               <div
                 key={e.id}

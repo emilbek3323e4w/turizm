@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { Eye, Check, X, EyeOff, Loader2, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { searchHotels, moderateHotel, deleteHotel, type Hotel, type HotelStatus } from "@/lib/api";
+import {
+  searchHotels,
+  moderateHotel,
+  deleteHotel,
+  mediaUrl,
+  type Hotel,
+  type HotelStatus,
+} from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 export default function AdminHotels() {
@@ -55,7 +62,8 @@ export default function AdminHotels() {
       ) : (
         <div className="mt-6 grid gap-4">
           {hotels.map((e) => {
-            const cover = e.images.find((i) => i.is_main)?.url ?? e.images[0]?.url;
+            const rawCover = e.images.find((i) => i.is_main)?.url ?? e.images[0]?.url;
+            const cover = rawCover ? mediaUrl(rawCover) : undefined;
             return (
               <div
                 key={e.id}

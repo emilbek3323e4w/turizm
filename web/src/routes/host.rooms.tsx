@@ -8,6 +8,7 @@ import {
   listReceptionHotels,
   getHotelRooms,
   createRoom,
+  mediaUrl,
   type RoomResponse,
   type RoomType,
   type Hotel,
@@ -86,7 +87,8 @@ export default function HostRooms() {
       ) : (
         <div className="mt-6 grid gap-4">
           {rooms.map((r) => {
-            const cover = r.images.find((i) => i.is_main)?.url ?? r.images[0]?.url;
+            const rawCover = r.images.find((i) => i.is_main)?.url ?? r.images[0]?.url;
+            const cover = rawCover ? mediaUrl(rawCover) : undefined;
             return (
               <div
                 key={r.id}

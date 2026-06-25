@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.dependencies import get_db
 from app.schemas.auth import RegisterRequest, RequestOtpRequest, VerifyOtpRequest, RefreshTokenRequest, GoogleAuthRequest, TokenResponse
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, UserUpdate
 from app.services.auth import AuthService
+from app.repositories.user import UserRepository
 from app.dependencies.dependencies import get_current_user
 from app.models.user import User
 
@@ -39,6 +41,24 @@ async def logout(req: RefreshTokenRequest, db: AsyncSession = Depends(get_db), c
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     """Данные текущего авторизованного пользователя."""
+    return current_user
+
+@router.patch("/me", response_model=UserResponse)
+async def update_me(
+    req: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Редактирование собственного профиля (имя, email, аватар)."""
+    if req.email and req.email != current_user.email:
+        existing = (
+            await db.execute(select(User).where(User.email == req.email))
+        ).scalars().first()
+        if existing is not None:
+            raise HTTPException(status_code=400, detail="Email already in use")
+    await UserRepository.update(current_user, req, db)
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 @router.post("/google", response_model=TokenResponse)

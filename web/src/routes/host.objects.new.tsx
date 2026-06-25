@@ -21,6 +21,7 @@ import {
   getAmenities,
   createHotel,
   setHotelAmenities,
+  uploadHotelImage,
   addMyHotelId,
   type HotelTypeResponse,
   type AmenityResponse,
@@ -47,6 +48,7 @@ export default function NewObjectWizard() {
 
   const [hotelTypeId, setHotelTypeId] = useState<number | null>(null);
   const [amenities, setAmenities] = useState<number[]>([]);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [coords, setCoords] = useState("");
@@ -121,6 +123,9 @@ export default function NewObjectWizard() {
       });
       if (amenities.length > 0) {
         await setHotelAmenities(hotel.id, amenities);
+      }
+      for (let i = 0; i < photos.length; i++) {
+        await uploadHotelImage(hotel.id, photos[i], i === 0).catch(() => {});
       }
       addMyHotelId(hotel.id);
       navigate("/host/objects");
@@ -291,11 +296,19 @@ export default function NewObjectWizard() {
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                   <ImageIcon className="h-6 w-6 text-muted-foreground" />
                 </span>
-                <span className="text-sm text-muted-foreground">{t("no.dropHint")}</span>
+                <span className="text-sm text-muted-foreground">
+                  {photos.length > 0 ? t("no.photosSelected", { n: photos.length }) : t("no.dropHint")}
+                </span>
                 <span className="inline-flex items-center gap-2 font-semibold text-primary">
                   <Upload className="h-4 w-4" /> {t("no.uploadBtn")}
                 </span>
-                <input type="file" multiple accept="image/*" className="hidden" />
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setPhotos(Array.from(e.target.files ?? []))}
+                />
               </label>
             </Step>
           )}

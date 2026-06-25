@@ -105,6 +105,18 @@ export async function getMe(): Promise<User> {
   return data;
 }
 
+export interface UpdateMeRequest {
+  name?: string;
+  email?: string | null;
+  avatar_url?: string | null;
+}
+
+/** Update the current user's own profile (name / email / avatar). */
+export async function updateMe(body: UpdateMeRequest): Promise<User> {
+  const { data } = await api.patch<User>("/auth/me", body);
+  return data;
+}
+
 /** Logs out on the backend (revokes the refresh token) and clears local tokens. */
 export async function logout(): Promise<void> {
   const refresh_token = getRefreshToken();

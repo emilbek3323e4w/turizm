@@ -1,6 +1,6 @@
 import type { Estate, Room as UIRoom, Review as UIReview, EstateType } from "@/lib/types";
 import type { Hotel } from "./hotels";
-import { searchHotels, getHotel, type HotelSearchParams } from "./hotels";
+import { searchHotels, getHotel, mediaUrl, type HotelSearchParams } from "./hotels";
 import { getHotelRooms, type RoomResponse, type RoomType } from "./rooms";
 import { getHotelReviews, type ReviewResponse } from "./reviews";
 
@@ -25,13 +25,13 @@ const ROOM_TYPE_LABEL: Record<RoomType, UIRoom["type"]> = {
 function hotelImageUrls(hotel: Hotel): string[] {
   const urls = [...hotel.images]
     .sort((a, b) => Number(b.is_main) - Number(a.is_main))
-    .map((i) => i.url);
+    .map((i) => mediaUrl(i.url));
   return urls.length ? urls : [PLACEHOLDER_IMAGE];
 }
 
 function roomImageUrl(room: RoomResponse, fallback: string): string {
   const main = room.images.find((i) => i.is_main) ?? room.images[0];
-  return main?.url ?? fallback;
+  return main ? mediaUrl(main.url) : fallback;
 }
 
 function formatReviewDate(iso: string): string {
