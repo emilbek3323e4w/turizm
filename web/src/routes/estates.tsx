@@ -13,8 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { allAmenities, categories, type Estate, type EstateType } from "@/lib/mock-data";
-import { getEstates } from "@/lib/api";
+import type { Estate, EstateType } from "@/lib/types";
+import {
+  getEstates,
+  getHotelTypes,
+  getAmenities,
+  type HotelTypeResponse,
+  type AmenityResponse,
+} from "@/lib/api";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";
 
@@ -23,15 +29,19 @@ export default function EstatesPage() {
   useDocumentTitle(t("catalog.docTitle"));
   const [searchParams] = useSearchParams();
   const [estates, setEstates] = useState<Estate[]>([]);
+  const [hotelTypes, setHotelTypes] = useState<HotelTypeResponse[]>([]);
+  const [amenityList, setAmenityList] = useState<AmenityResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [price, setPrice] = useState<number[]>([1000, 10000]);
-  const [types, setTypes] = useState<EstateType[]>([]);
+  const [types, setTypes] = useState<EstateType[]>(
+    searchParams.get("type") ? [searchParams.get("type") as EstateType] : [],
+  );
   const [amenities, setAmenities] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState("rating");
 
-  // Load the catalog once; filtering/sorting stays client-side over the result.
+  // Load the catalog + filter reference data; filtering stays client-side.
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -43,6 +53,12 @@ export default function EstatesPage() {
       .finally(() => {
         if (active) setLoading(false);
       });
+    getHotelTypes()
+      .then((tps) => active && setHotelTypes(tps))
+      .catch(() => {});
+    getAmenities()
+      .then((am) => active && setAmenityList(am))
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -99,15 +115,13 @@ export default function EstatesPage() {
 
             <Section title={t("filters.type")}>
               <div className="space-y-2">
-                {categories.map((c) => (
-                  <label key={c.type} className="flex cursor-pointer items-center gap-2 text-sm">
+                {hotelTypes.map((c) => (
+                  <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
                     <Checkbox
-                      checked={types.includes(c.type)}
-                      onCheckedChange={() => toggle(types, setTypes, c.type)}
+                      checked={types.includes(c.name)}
+                      onCheckedChange={() => toggle(types, setTypes, c.name)}
                     />
-                    <span>
-                      {c.icon} {td(c.type)}
-                    </span>
+                    <span>{td(c.name)}</span>
                   </label>
                 ))}
               </div>
@@ -149,13 +163,13 @@ export default function EstatesPage() {
 
             <Section title={t("filters.amenities")}>
               <div className="space-y-2">
-                {allAmenities.map((a) => (
-                  <label key={a} className="flex cursor-pointer items-center gap-2 text-sm">
+                {amenityList.map((a) => (
+                  <label key={a.id} className="flex cursor-pointer items-center gap-2 text-sm">
                     <Checkbox
-                      checked={amenities.includes(a)}
-                      onCheckedChange={() => toggle(amenities, setAmenities, a)}
+                      checked={amenities.includes(a.name)}
+                      onCheckedChange={() => toggle(amenities, setAmenities, a.name)}
                     />
-                    {td(a)}
+                    {td(a.name)}
                   </label>
                 ))}
               </div>

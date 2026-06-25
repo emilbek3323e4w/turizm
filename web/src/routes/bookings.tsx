@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, MapPin, X, MessageCircle, Loader2 } from "lucide-react";
+import { Calendar, MapPin, X, MessageCircle, Loader2, Download } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,6 +113,29 @@ export default function BookingsPage() {
       day: "numeric",
       month: "long",
     });
+
+  function downloadReceipt(v: BookingView) {
+    const b = v.booking;
+    const lines = [
+      `MEIMAN — ${t("mb.receipt")}`,
+      "================================",
+      `${t("hb.hotel")}: ${v.estate.name}`,
+      `${t("hb.room")}: ${v.roomName}`,
+      `${t("hb.dates")}: ${b.date_from} → ${b.date_to}`,
+      `${t("search.guests")}: ${b.guests}`,
+      `${t("mb.total")}: ${Number(b.total_amount).toLocaleString("ru-RU")} ${t("common.kgs")}`,
+      `${t("detail.deposit")}: ${Number(b.deposit_amount).toLocaleString("ru-RU")} ${t("common.kgs")}`,
+      `${t("ad.colStatus")}: ${t(STATUS_LABEL[b.status])}`,
+      `#${b.id}`,
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `receipt-${b.id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function handleCancel(id: number) {
     setCancelling(id);
@@ -232,6 +255,14 @@ export default function BookingsPage() {
                         >
                           <MessageCircle className="h-4 w-4" /> {t("mb.chat")}
                         </a>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() => downloadReceipt({ booking: b, estate, roomName })}
+                      >
+                        <Download className="h-4 w-4" /> {t("mb.receipt")}
                       </Button>
                       {CANCELLABLE.includes(b.status) && (
                         <Button

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { type Estate } from "@/lib/mock-data";
+import { type Estate } from "@/lib/types";
 import { getEstate, isFavorite, toggleFavorite } from "@/lib/api";
 import { DatePicker } from "@/components/DatePicker";
 import { useDocumentTitle } from "@/hooks/use-document-title";

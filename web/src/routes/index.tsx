@@ -14,11 +14,21 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/DatePicker";
-import { categories, type Estate } from "@/lib/mock-data";
+import type { Estate } from "@/lib/types";
 import heroImg from "@/assets/hero.jpg";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";
-import { getEstates } from "@/lib/api";
+import { getEstates, getHotelTypes, type HotelTypeResponse } from "@/lib/api";
+
+/** Emoji per hotel-type slug for the quick-filter chips. */
+const TYPE_EMOJI: Record<string, string> = {
+  hotel: "🛎️",
+  inn: "🏨",
+  guesthouse: "🏡",
+  cottage: "🏘️",
+  hostel: "🛏️",
+  yurt: "⛺",
+};
 
 export default function HomePage() {
   const { t, td } = useI18n();
@@ -26,6 +36,7 @@ export default function HomePage() {
   useDocumentTitle(t("home.docTitle"));
 
   const [estates, setEstates] = useState<Estate[]>([]);
+  const [hotelTypes, setHotelTypes] = useState<HotelTypeResponse[]>([]);
 
   // Search-bar state (drives the /estates query on submit).
   const [destination, setDestination] = useState("");
@@ -50,6 +61,11 @@ export default function HomePage() {
         if (active) setEstates(list);
       })
       .catch((err) => console.error("[home] failed to load estates", err));
+    getHotelTypes()
+      .then((types) => {
+        if (active) setHotelTypes(types);
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -157,14 +173,14 @@ export default function HomePage() {
 
           {/* Quick filters */}
           <div className="mt-4 flex flex-wrap gap-2">
-            {categories.map((c) => (
+            {hotelTypes.map((c) => (
               <Link
-                key={c.type}
-                to="/estates"
+                key={c.id}
+                to={`/estates?type=${encodeURIComponent(c.name)}`}
                 className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium transition hover:border-primary hover:text-primary"
               >
-                <span>{c.icon}</span>
-                {td(c.type)}
+                <span>{TYPE_EMOJI[c.slug] ?? "🏠"}</span>
+                {td(c.name)}
               </Link>
             ))}
           </div>

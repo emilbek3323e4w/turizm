@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MapPin, Star, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { type Estate } from "@/lib/mock-data";
+import { type Estate } from "@/lib/types";
 import { getFavoriteEstates } from "@/lib/api";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";

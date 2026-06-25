@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { type Estate } from "@/lib/mock-data";
+import { type Estate } from "@/lib/types";
 import { getEstate, createBooking, getAccessToken } from "@/lib/api";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";

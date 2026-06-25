@@ -1,4 +1,4 @@
-import type { Estate } from "@/lib/mock-data";
+import type { Estate } from "@/lib/types";
 import { getEstate } from "./estates";
 
 // --- Favorites -------------------------------------------------------------

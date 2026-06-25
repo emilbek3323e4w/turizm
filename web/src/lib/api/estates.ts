@@ -1,4 +1,4 @@
-import type { Estate, Room as UIRoom, Review as UIReview, EstateType } from "@/lib/mock-data";
+import type { Estate, Room as UIRoom, Review as UIReview, EstateType } from "@/lib/types";
 import type { Hotel } from "./hotels";
 import { searchHotels, getHotel, type HotelSearchParams } from "./hotels";
 import { getHotelRooms, type RoomResponse, type RoomType } from "./rooms";

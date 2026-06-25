@@ -1,21 +1,30 @@
-import { Wallet, TrendingUp, PiggyBank, Percent, Receipt } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Wallet, Percent, Calendar, Loader2 } from "lucide-react";
+import { getAdminDashboard, type AdminDashboard } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 export default function AdminFinance() {
   const { t } = useI18n();
-  const kgs = t("common.kgs");
+  const [data, setData] = useState<AdminDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const periods = [
-    { label: t("ad.finDay"), value: `12 800 ${kgs}` },
-    { label: t("ad.finWeek"), value: `96 400 ${kgs}` },
-    { label: t("ad.finMonth"), value: `428 500 ${kgs}` },
-    { label: t("ad.finYear"), value: `4 920 000 ${kgs}` },
-  ];
+  useEffect(() => {
+    getAdminDashboard()
+      .then(setData)
+      .catch((err) => console.error("[admin.finance] load failed", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const kgs = t("common.kgs");
+  const revenue = data?.total_revenue ?? 0;
   const stats = [
-    { label: t("ad.finTotal"), value: `5 340 000 ${kgs}`, icon: Wallet },
-    { label: t("ad.finDeposits"), value: `1 602 000 ${kgs}`, icon: PiggyBank },
-    { label: t("ad.finCommission"), value: `534 000 ${kgs}`, icon: Percent },
-    { label: t("ad.finTransactions"), value: "1 286", icon: Receipt },
+    { label: t("ad.finTotal"), value: `${revenue.toLocaleString("ru-RU")} ${kgs}`, icon: Wallet },
+    {
+      label: t("ad.finCommission"),
+      value: `${Math.round(revenue * 0.1).toLocaleString("ru-RU")} ${kgs}`,
+      icon: Percent,
+    },
+    { label: t("ad.statBookings"), value: String(data?.bookings_count ?? 0), icon: Calendar },
   ];
 
   return (
@@ -25,43 +34,23 @@ export default function AdminFinance() {
         <p className="mt-1 text-muted-foreground">{t("ad.financeSubtitle")}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {periods.map((p) => (
-          <div key={p.label} className="rounded-2xl border border-border/70 bg-card p-5">
-            <div className="flex items-center gap-1 text-xs font-semibold text-success">
-              <TrendingUp className="h-3 w-3" /> {t("ad.statRevenue")}
-            </div>
-            <div className="mt-3 font-display text-2xl font-extrabold">{p.value}</div>
-            <div className="text-sm text-muted-foreground">{p.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border/70 bg-card p-5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <s.icon className="h-5 w-5" />
-            </span>
-            <div className="mt-4 font-display text-xl font-extrabold">{s.value}</div>
-            <div className="text-sm text-muted-foreground">{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="rounded-2xl border border-border/70 bg-card p-6">
-        <h2 className="font-display text-lg font-bold">{t("ad.finByMonth")}</h2>
-        <div className="mt-6 flex h-48 items-end gap-2">
-          {[40, 62, 55, 78, 90, 72, 95, 110, 88, 102, 130, 118].map((h, i) => (
-            <div key={i} className="flex-1">
-              <div
-                className="rounded-t-md bg-gradient-to-t from-primary/30 to-primary"
-                style={{ height: `${h}%` }}
-              />
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" /> {t("ho.loading")}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-2xl border border-border/70 bg-card p-5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                <s.icon className="h-5 w-5" />
+              </span>
+              <div className="mt-4 font-display text-2xl font-extrabold">{s.value}</div>
+              <div className="text-sm text-muted-foreground">{s.label}</div>
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { isAxiosError } from "axios";
-import { Plus, Edit2, Trash2, Eye, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, Loader2, Upload } from "lucide-react";
 import {
   listReceptionHotels,
   updateHotel,
   deleteHotel,
   removeMyHotelId,
+  uploadHotelImage,
+  mediaUrl,
   type Hotel,
+  type HotelImage,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +70,10 @@ export default function HostObjects() {
   function onSaved(updated: Hotel) {
     setObjects((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)));
     setEditing(null);
+  }
+
+  function onImagesUpdated(id: number, images: HotelImage[]) {
+    setObjects((prev) => prev.map((h) => (h.id === id ? { ...h, images } : h)));
   }
 
   return (
@@ -177,7 +184,12 @@ export default function HostObjects() {
         </div>
       )}
 
-      <EditDialog hotel={editing} onClose={() => setEditing(null)} onSaved={onSaved} />
+      <EditDialog
+        hotel={editing}
+        onClose={() => setEditing(null)}
+        onSaved={onSaved}
+        onImagesUpdated={onImagesUpdated}
+      />
     </div>
   );
 }
@@ -186,10 +198,12 @@ function EditDialog({
   hotel,
   onClose,
   onSaved,
+  onImagesUpdated,
 }: {
   hotel: Hotel | null;
   onClose: () => void;
   onSaved: (h: Hotel) => void;
+  onImagesUpdated: (id: number, images: HotelImage[]) => void;
 }) {
   const { t } = useI18n();
   const [name, setName] = useState("");
@@ -197,6 +211,8 @@ function EditDialog({
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [images, setImages] = useState<HotelImage[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -207,9 +223,33 @@ function EditDialog({
       setAddress(hotel.address);
       setPhone(hotel.phone);
       setWhatsapp(hotel.whatsapp);
+      setImages(hotel.images);
       setError(null);
     }
   }, [hotel]);
+
+  async function handleFiles(files: FileList | null) {
+    if (!hotel || !files || files.length === 0) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const next = [...images];
+      for (const file of Array.from(files)) {
+        const img = await uploadHotelImage(hotel.id, file, next.length === 0);
+        next.push(img);
+      }
+      setImages(next);
+      onImagesUpdated(hotel.id, next);
+    } catch (err) {
+      setError(
+        isAxiosError(err)
+          ? ((err.response?.data as { detail?: string } | undefined)?.detail ?? err.message)
+          : t("ho.deleteError"),
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     if (!hotel) return;
@@ -263,6 +303,40 @@ function EditDialog({
           <div className="grid grid-cols-2 gap-3">
             <LabeledInput label={t("ho.phone")} value={phone} onChange={setPhone} />
             <LabeledInput label={t("ho.whatsapp")} value={whatsapp} onChange={setWhatsapp} />
+          </div>
+
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("ho.photos")}
+            </div>
+            {images.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {images.map((img) => (
+                  <img
+                    key={img.id}
+                    src={mediaUrl(img.url)}
+                    alt=""
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                ))}
+              </div>
+            )}
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-surface px-4 py-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-accent/40">
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}{" "}
+              {t("ho.uploadPhoto")}
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => handleFiles(e.target.files)}
+              />
+            </label>
           </div>
         </div>
         <DialogFooter>
