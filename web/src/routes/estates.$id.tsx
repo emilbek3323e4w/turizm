@@ -24,6 +24,7 @@ import { getEstate, isFavorite, toggleFavorite } from "@/lib/api";
 import { DatePicker } from "@/components/DatePicker";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";
+import { useAutoTranslate, T } from "@/lib/translate";
 
 const amenityIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "Wi-Fi": Wifi,
@@ -94,6 +95,11 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
   const [fav, setFav] = useState(() => isFavorite(Number(estate.id)));
   const [copied, setCopied] = useState(false);
 
+  // User-entered content (not in the i18n dictionary) → machine-translated.
+  const nameText = useAutoTranslate(estate.name);
+  const addressText = useAutoTranslate(estate.address);
+  const aboutText = useAutoTranslate(estate.description);
+
   async function handleShare() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -124,9 +130,7 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
               <span>/</span>
               <span>{td(estate.type)}</span>
             </div>
-            <h1 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">
-              {td(estate.name)}
-            </h1>
+            <h1 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">{nameText}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
               <span className="inline-flex items-center gap-1 font-semibold">
                 <Star className="h-4 w-4 fill-warning text-warning" /> {estate.rating}
@@ -135,7 +139,7 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
                 </span>
               </span>
               <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <MapPin className="h-4 w-4" /> {td(estate.address)}
+                <MapPin className="h-4 w-4" /> {addressText}
               </span>
             </div>
           </div>
@@ -173,7 +177,7 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
           <div>
             <section>
               <h2 className="font-display text-2xl font-bold">{t("detail.about")}</h2>
-              <p className="mt-3 leading-relaxed text-muted-foreground">{td(estate.description)}</p>
+              <p className="mt-3 leading-relaxed text-muted-foreground">{aboutText}</p>
             </section>
 
             <section className="mt-10">
@@ -221,7 +225,9 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
                     <div className="flex flex-1 flex-col py-1 pr-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="font-display text-lg font-bold">{td(r.name)}</div>
+                          <div className="font-display text-lg font-bold">
+                            <T text={r.name} />
+                          </div>
                           <div className="text-xs text-muted-foreground">
                             {td(r.type)} · {t("detail.upToGuests", { n: r.capacity })}
                           </div>
@@ -236,7 +242,7 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
                         </div>
                       </div>
                       <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
-                        {td(r.description)}
+                        <T text={r.description} />
                       </p>
                     </div>
                   </button>
@@ -247,7 +253,7 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
             <section className="mt-10">
               <h2 className="font-display text-2xl font-bold">{t("detail.location")}</h2>
               <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" /> {td(estate.address)}
+                <MapPin className="h-4 w-4" /> {addressText}
               </div>
               <div className="mt-4 overflow-hidden rounded-2xl border border-border/70">
                 <iframe
@@ -285,7 +291,9 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
                         ))}
                       </div>
                     </div>
-                    <p className="mt-3 text-sm leading-relaxed">{td(rv.text)}</p>
+                    <p className="mt-3 text-sm leading-relaxed">
+                      <T text={rv.text} />
+                    </p>
                     {rv.reply && (
                       <div className="mt-3 rounded-xl bg-muted p-3 text-sm">
                         <div className="text-xs font-semibold text-muted-foreground">
@@ -342,7 +350,9 @@ function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void
                 </span>
                 <span className="text-sm text-muted-foreground">{t("detail.perNight")}</span>
               </div>
-              <div className="mt-1 text-sm text-muted-foreground">{td(selectedRoom.name)}</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                <T text={selectedRoom.name} />
+              </div>
 
               <div className="mt-5 overflow-hidden rounded-xl border border-border">
                 <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
