@@ -50,7 +50,7 @@ const PLACEHOLDER_IMAGE =
 /** A booking enriched with its room + hotel display data. */
 interface BookingView {
   booking: BookingResponse;
-  estate: { id: number; name: string; address: string; cover: string };
+  estate: { id: number; name: string; address: string; cover: string; whatsapp: string };
   roomName: string;
 }
 
@@ -61,7 +61,13 @@ async function enrichBooking(b: BookingResponse): Promise<BookingView> {
     hotel.images.find((i) => i.is_main)?.url ?? hotel.images[0]?.url ?? PLACEHOLDER_IMAGE;
   return {
     booking: b,
-    estate: { id: hotel.id, name: hotel.name, address: hotel.address, cover },
+    estate: {
+      id: hotel.id,
+      name: hotel.name,
+      address: hotel.address,
+      cover,
+      whatsapp: hotel.whatsapp,
+    },
     roomName: room.name,
   };
 }
@@ -218,8 +224,14 @@ export default function BookingsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="gap-1.5">
-                        <MessageCircle className="h-4 w-4" /> {t("mb.chat")}
+                      <Button asChild size="sm" variant="outline" className="gap-1.5">
+                        <a
+                          href={`https://wa.me/${estate.whatsapp.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MessageCircle className="h-4 w-4" /> {t("mb.chat")}
+                        </a>
                       </Button>
                       {CANCELLABLE.includes(b.status) && (
                         <Button
