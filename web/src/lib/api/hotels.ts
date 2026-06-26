@@ -5,7 +5,7 @@ import type { AmenityResponse, HotelTypeResponse } from "./catalog";
  * Types mirror app/schemas/hotel.py / image.py on the backend.
  */
 
-export type HotelStatus = "pending" | "approved";
+export type HotelStatus = "pending" | "approved" | "rejected" | "blocked";
 
 export interface HotelImage {
   id: number;
@@ -102,6 +102,51 @@ export async function getHotel(hotelId: number): Promise<Hotel> {
   return data;
 }
 
+/** Update a hotel's editable fields (PATCH /reception/hotels/{id}). */
+export async function updateHotel(
+  hotelId: number,
+  patch: Partial<HotelCreatePayload>,
+): Promise<Hotel> {
+  const { data } = await api.patch<Hotel>(`/reception/hotels/${hotelId}`, patch);
+  return data;
+}
+
+/** Delete a hotel (DELETE /hotels/{id} — admin only on the backend). */
+export async function deleteHotel(hotelId: number): Promise<void> {
+  await api.delete(`/hotels/${hotelId}`);
+}
+
+/** Backend origin (VITE_API_URL without the /api/v1 suffix), for served media. */
+const MEDIA_ORIGIN = (import.meta.env.VITE_API_URL ?? "").replace(/\/api\/v1\/?$/, "");
+
+/** Resolve a possibly-relative image URL (e.g. /static/...) to an absolute one. */
+export function mediaUrl(url: string): string {
+  if (!url) return url;
+  if (/^https?:\/\//.test(url)) return url;
+  return `${MEDIA_ORIGIN}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+/** Upload a hotel photo (multipart). Returns the created image. */
+export async function uploadHotelImage(
+  hotelId: number,
+  file: File,
+  isMain = false,
+): Promise<HotelImage> {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<HotelImage>(`/reception/hotels/${hotelId}/images`, form, {
+    params: { is_main: isMain },
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+/** Hotels owned by the current reception/admin user (GET /reception/hotels). */
+export async function listReceptionHotels(): Promise<Hotel[]> {
+  const { data } = await api.get<Hotel[]>("/reception/hotels");
+  return data;
+}
+
 // --- "My hotels" tracking --------------------------------------------------
 //
 // The backend has no "list my hotels" endpoint yet, so we remember the ids of
@@ -127,6 +172,11 @@ export function addMyHotelId(id: number): void {
   if (!ids.includes(id)) {
     localStorage.setItem(MY_HOTELS_KEY, JSON.stringify([...ids, id]));
   }
+}
+
+export function removeMyHotelId(id: number): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(MY_HOTELS_KEY, JSON.stringify(getMyHotelIds().filter((x) => x !== id)));
 }
 
 /** Load all hotels created from this browser (newest first). */

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { type Estate } from "@/lib/mock-data";
+import { type Estate } from "@/lib/types";
 import { getEstate, createBooking, getAccessToken } from "@/lib/api";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";
@@ -102,7 +102,7 @@ export default function CheckoutPage() {
       const detail = isAxiosError(err)
         ? (err.response?.data as { detail?: string })?.detail
         : undefined;
-      setError(detail ?? "Не удалось создать бронирование. Попробуйте ещё раз.");
+      setError(detail ?? t("co.createError"));
     } finally {
       setSubmitting(false);
     }

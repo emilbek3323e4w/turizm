@@ -3,99 +3,106 @@ import { ImageIcon, Upload, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 
-const tabs = ["Информация", "Удобства", "Фотографии"] as const;
+type TabKey = "info" | "amenities" | "photos";
 
-const hotelAmenities = [
-  "Wi-Fi",
-  "Парковка",
-  "Кондиционер",
-  "Бассейн",
-  "Ресторан",
-  "Трансфер",
-  "Баня",
-  "Детская площадка",
+const TYPE_KEYS = ["hs.typeHotel", "hs.typeHotel2", "hs.typeHostel", "hs.typeCottage", "hs.typeGuest"];
+const AMENITY_KEYS = [
+  "hs.amWifi",
+  "hs.amParking",
+  "hs.amAc",
+  "hs.amPool",
+  "hs.amRestaurant",
+  "hs.amTransfer",
+  "hs.amSauna",
+  "hs.amPlayground",
 ];
 
 export default function HostSettings() {
-  const [tab, setTab] = useState<(typeof tabs)[number]>("Информация");
-  const [selected, setSelected] = useState<string[]>(["Wi-Fi", "Парковка", "Баня"]);
+  const { t } = useI18n();
+  const [tab, setTab] = useState<TabKey>("info");
+  const [selected, setSelected] = useState<string[]>(["hs.amWifi", "hs.amParking", "hs.amSauna"]);
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "info", label: t("hs.tabInfo") },
+    { key: "amenities", label: t("hs.tabAmenities") },
+    { key: "photos", label: t("hs.tabPhotos") },
+  ];
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-display text-3xl font-extrabold">Моя гостиница</h1>
-      <p className="mt-1 text-muted-foreground">Настройки объекта «Капсула «Булан»»</p>
+      <h1 className="font-display text-3xl font-extrabold">{t("hs.title")}</h1>
+      <p className="mt-1 text-muted-foreground">{t("hs.subtitle")}</p>
 
       <div className="mt-6 flex flex-wrap gap-2 border-b border-border/70 pb-3">
-        {tabs.map((t) => (
+        {tabs.map((tb) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tb.key}
+            onClick={() => setTab(tb.key)}
             className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              tab === t
+              tab === tb.key
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
-            {t}
+            {tb.label}
           </button>
         ))}
       </div>
 
       <div className="mt-6 rounded-2xl border border-border/70 bg-card p-6">
-        {tab === "Информация" && (
+        {tab === "info" && (
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Название гостиницы">
-              <Input defaultValue="Капсула «Булан»" />
+            <Field label={t("hs.hotelName")}>
+              <Input placeholder={t("hs.hotelName")} />
             </Field>
-            <Field label="Тип объекта">
+            <Field label={t("hs.objectType")}>
               <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                <option>Гостиница</option>
-                <option>Отель</option>
-                <option>Хостел</option>
-                <option>Коттедж</option>
-                <option>Гостевой дом</option>
+                {TYPE_KEYS.map((k) => (
+                  <option key={k}>{t(k)}</option>
+                ))}
               </select>
             </Field>
-            <Field label="Адрес">
-              <Input defaultValue="с. Булан-Соготту, Сары-Челек" />
+            <Field label={t("hs.address")}>
+              <Input placeholder={t("hs.address")} />
             </Field>
-            <Field label="Координаты на карте">
-              <Input defaultValue="41.8500, 71.9500" />
+            <Field label={t("hs.coords")}>
+              <Input placeholder="41.8500, 71.9500" />
             </Field>
-            <Field label="Телефон">
-              <Input defaultValue="+996 700 11 22 33" />
+            <Field label={t("hs.phone")}>
+              <Input placeholder="+996 700 00 00 00" />
             </Field>
             <Field label="WhatsApp">
-              <Input defaultValue="+996 700 11 22 33" />
+              <Input placeholder="+996 700 00 00 00" />
             </Field>
-            <Field label="Email">
-              <Input defaultValue="bulan@example.com" />
+            <Field label={t("hs.email")}>
+              <Input placeholder="hotel@example.com" />
             </Field>
             <div />
-            <Field label="Время заезда">
+            <Field label={t("hs.checkIn")}>
               <Input type="time" defaultValue="14:00" />
             </Field>
-            <Field label="Время выезда">
+            <Field label={t("hs.checkOut")}>
               <Input type="time" defaultValue="12:00" />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Описание">
-                <Textarea rows={4} defaultValue="Уютный современный коттедж в горах Сары-Челека." />
+              <Field label={t("hs.desc")}>
+                <Textarea rows={4} placeholder={t("hs.desc")} />
               </Field>
             </div>
           </div>
         )}
 
-        {tab === "Удобства" && (
+        {tab === "amenities" && (
           <div className="flex flex-wrap gap-2">
-            {hotelAmenities.map((a) => {
-              const active = selected.includes(a);
+            {AMENITY_KEYS.map((k) => {
+              const active = selected.includes(k);
               return (
                 <button
-                  key={a}
+                  key={k}
                   onClick={() =>
-                    setSelected((s) => (s.includes(a) ? s.filter((x) => x !== a) : [...s, a]))
+                    setSelected((s) => (s.includes(k) ? s.filter((x) => x !== k) : [...s, k]))
                   }
                   className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
                     active
@@ -103,20 +110,20 @@ export default function HostSettings() {
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  {active && <Check className="h-4 w-4" />} {a}
+                  {active && <Check className="h-4 w-4" />} {t(k)}
                 </button>
               );
             })}
           </div>
         )}
 
-        {tab === "Фотографии" && (
+        {tab === "photos" && (
           <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-surface p-12 transition hover:border-primary hover:bg-accent/40">
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
               <ImageIcon className="h-6 w-6 text-muted-foreground" />
             </span>
             <span className="inline-flex items-center gap-2 font-semibold text-primary">
-              <Upload className="h-4 w-4" /> Загрузить фотографии
+              <Upload className="h-4 w-4" /> {t("hs.uploadPhotos")}
             </span>
             <input type="file" multiple accept="image/*" className="hidden" />
           </label>
@@ -124,7 +131,7 @@ export default function HostSettings() {
       </div>
 
       <Button size="lg" className="mt-6 rounded-xl">
-        Сохранить
+        {t("hs.save")}
       </Button>
     </div>
   );

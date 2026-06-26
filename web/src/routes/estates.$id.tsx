@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { ReviewForm } from "@/components/ReviewForm";
 import {
   MapPin,
   Star,
@@ -18,10 +19,12 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
-import { type Estate } from "@/lib/mock-data";
-import { getEstate } from "@/lib/api";
+import { type Estate } from "@/lib/types";
+import { getEstate, isFavorite, toggleFavorite } from "@/lib/api";
+import { DatePicker } from "@/components/DatePicker";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useI18n } from "@/lib/i18n";
+import { useAutoTranslate, T } from "@/lib/translate";
 
 const amenityIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   "Wi-Fi": Wifi,
@@ -36,29 +39,25 @@ export default function EstateDetail() {
   const [estate, setEstate] = useState<Estate | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const reload = useCallback(() => {
     const hotelId = Number(id);
     if (!Number.isFinite(hotelId)) {
       setLoading(false);
       return;
     }
-    let active = true;
-    setLoading(true);
     getEstate(hotelId)
-      .then((e) => {
-        if (active) setEstate(e);
-      })
+      .then((e) => setEstate(e))
       .catch((err) => {
         console.error("[detail] failed to load estate", err);
-        if (active) setEstate(null);
+        setEstate(null);
       })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+      .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    setLoading(true);
+    reload();
+  }, [reload]);
 
   if (loading) {
     return (
@@ -81,22 +80,41 @@ export default function EstateDetail() {
       </AppShell>
     );
   }
-  return <EstateView estate={estate} />;
+  return <EstateView estate={estate} onReload={reload} />;
 }
 
-function EstateView({ estate }: { estate: Estate }) {
+function EstateView({ estate, onReload }: { estate: Estate; onReload: () => void }) {
   const { t, td } = useI18n();
-  useDocumentTitle(`${td(estate.name)} — MEIMAN`);
-  const [selectedRoom, setSelectedRoom] = useState(estate.rooms[0]);
+  useDocumentTitle(`${td(estate.name)} — StayKG`);
+  const [selectedRoom, setSelectedRoom] = useState<(typeof estate.rooms)[number] | undefined>(
+    estate.rooms[0],
+  );
   const [checkIn, setCheckIn] = useState("2026-07-10");
   const [checkOut, setCheckOut] = useState("2026-07-14");
   const [guests, setGuests] = useState(2);
+  const [fav, setFav] = useState(() => isFavorite(Number(estate.id)));
+  const [copied, setCopied] = useState(false);
+
+  // User-entered content (not in the i18n dictionary) → machine-translated.
+  const nameText = useAutoTranslate(estate.name);
+  const addressText = useAutoTranslate(estate.address);
+  const aboutText = useAutoTranslate(estate.description);
+
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
 
   const nights = Math.max(
     1,
     Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000),
   );
-  const total = selectedRoom.price * nights;
+  const total = (selectedRoom?.price ?? 0) * nights;
   const deposit = Math.round(total * 0.3);
 
   return (
@@ -112,9 +130,7 @@ function EstateView({ estate }: { estate: Estate }) {
               <span>/</span>
               <span>{td(estate.type)}</span>
             </div>
-            <h1 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">
-              {td(estate.name)}
-            </h1>
+            <h1 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">{nameText}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
               <span className="inline-flex items-center gap-1 font-semibold">
                 <Star className="h-4 w-4 fill-warning text-warning" /> {estate.rating}
@@ -123,16 +139,23 @@ function EstateView({ estate }: { estate: Estate }) {
                 </span>
               </span>
               <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <MapPin className="h-4 w-4" /> {td(estate.address)}
+                <MapPin className="h-4 w-4" /> {addressText}
               </span>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Share2 className="h-4 w-4" /> {t("detail.share")}
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleShare}>
+              {copied ? <Check className="h-4 w-4 text-success" /> : <Share2 className="h-4 w-4" />}{" "}
+              {copied ? t("detail.linkCopied") : t("detail.share")}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Heart className="h-4 w-4" /> {t("detail.favorite")}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setFav(toggleFavorite(Number(estate.id)))}
+            >
+              <Heart className={`h-4 w-4 ${fav ? "fill-primary text-primary" : ""}`} />{" "}
+              {t("detail.favorite")}
             </Button>
           </div>
         </div>
@@ -154,7 +177,7 @@ function EstateView({ estate }: { estate: Estate }) {
           <div>
             <section>
               <h2 className="font-display text-2xl font-bold">{t("detail.about")}</h2>
-              <p className="mt-3 leading-relaxed text-muted-foreground">{td(estate.description)}</p>
+              <p className="mt-3 leading-relaxed text-muted-foreground">{aboutText}</p>
             </section>
 
             <section className="mt-10">
@@ -178,12 +201,17 @@ function EstateView({ estate }: { estate: Estate }) {
             <section className="mt-10">
               <h2 className="font-display text-2xl font-bold">{t("detail.rooms")}</h2>
               <div className="mt-4 space-y-3">
+                {estate.rooms.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-card p-6 text-center text-sm text-muted-foreground">
+                    {t("detail.noRooms")}
+                  </div>
+                )}
                 {estate.rooms.map((r: (typeof estate.rooms)[number]) => (
                   <button
                     key={r.id}
                     onClick={() => setSelectedRoom(r)}
                     className={`flex w-full gap-4 overflow-hidden rounded-2xl border bg-card p-2 text-left transition ${
-                      selectedRoom.id === r.id
+                      selectedRoom?.id === r.id
                         ? "border-primary shadow-[var(--shadow-soft)]"
                         : "border-border/70 hover:border-primary/50"
                     }`}
@@ -197,7 +225,9 @@ function EstateView({ estate }: { estate: Estate }) {
                     <div className="flex flex-1 flex-col py-1 pr-3">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="font-display text-lg font-bold">{td(r.name)}</div>
+                          <div className="font-display text-lg font-bold">
+                            <T text={r.name} />
+                          </div>
                           <div className="text-xs text-muted-foreground">
                             {td(r.type)} · {t("detail.upToGuests", { n: r.capacity })}
                           </div>
@@ -212,7 +242,7 @@ function EstateView({ estate }: { estate: Estate }) {
                         </div>
                       </div>
                       <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
-                        {td(r.description)}
+                        <T text={r.description} />
                       </p>
                     </div>
                   </button>
@@ -223,7 +253,7 @@ function EstateView({ estate }: { estate: Estate }) {
             <section className="mt-10">
               <h2 className="font-display text-2xl font-bold">{t("detail.location")}</h2>
               <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" /> {td(estate.address)}
+                <MapPin className="h-4 w-4" /> {addressText}
               </div>
               <div className="mt-4 overflow-hidden rounded-2xl border border-border/70">
                 <iframe
@@ -238,6 +268,7 @@ function EstateView({ estate }: { estate: Estate }) {
 
             <section className="mt-10">
               <h2 className="font-display text-2xl font-bold">{t("detail.reviewsTitle")}</h2>
+              <ReviewForm hotelId={Number(estate.id)} onSubmitted={onReload} />
               <div className="mt-4 space-y-4">
                 {estate.reviews.map((rv: (typeof estate.reviews)[number]) => (
                   <div key={rv.id} className="rounded-2xl border border-border/70 bg-card p-5">
@@ -260,7 +291,9 @@ function EstateView({ estate }: { estate: Estate }) {
                         ))}
                       </div>
                     </div>
-                    <p className="mt-3 text-sm leading-relaxed">{td(rv.text)}</p>
+                    <p className="mt-3 text-sm leading-relaxed">
+                      <T text={rv.text} />
+                    </p>
                     {rv.reply && (
                       <div className="mt-3 rounded-xl bg-muted p-3 text-sm">
                         <div className="text-xs font-semibold text-muted-foreground">
@@ -307,31 +340,27 @@ function EstateView({ estate }: { estate: Estate }) {
           {/* Booking widget */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
             <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-[var(--shadow-card)]">
+              {!selectedRoom ? (
+                <div className="text-sm text-muted-foreground">{t("detail.noRooms")}</div>
+              ) : (
+              <>
               <div className="flex items-baseline gap-1">
                 <span className="font-display text-3xl font-extrabold">
                   {selectedRoom.price.toLocaleString("ru-RU")}
                 </span>
                 <span className="text-sm text-muted-foreground">{t("detail.perNight")}</span>
               </div>
-              <div className="mt-1 text-sm text-muted-foreground">{td(selectedRoom.name)}</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                <T text={selectedRoom.name} />
+              </div>
 
               <div className="mt-5 overflow-hidden rounded-xl border border-border">
                 <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
                   <Field label={t("search.checkin")} icon={CalendarIcon}>
-                    <input
-                      type="date"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none"
-                    />
+                    <DatePicker value={checkIn} onChange={setCheckIn} />
                   </Field>
                   <Field label={t("search.checkout")} icon={CalendarIcon}>
-                    <input
-                      type="date"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full bg-transparent text-sm font-medium outline-none"
-                    />
+                    <DatePicker value={checkOut} onChange={setCheckOut} min={checkIn} />
                   </Field>
                 </div>
                 <Field label={t("search.guests")} icon={Users}>
@@ -384,6 +413,8 @@ function EstateView({ estate }: { estate: Estate }) {
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 {t("detail.noCharge")}
               </p>
+              </>
+              )}
             </div>
           </aside>
         </div>

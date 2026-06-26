@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { Calendar, MapPin, X, MessageCircle, Loader2 } from "lucide-react";
+import { Calendar, MapPin, X, MessageCircle, Loader2, Download } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,17 +28,18 @@ const TAB_STATUSES: Record<(typeof tabKeys)[number], BookingStatus[] | null> = {
   "mb.tabAll": null,
   "mb.tabPending": ["pending"],
   "mb.tabConfirmed": ["confirmed", "checked_in"],
-  "mb.tabCompleted": ["checked_out"],
+  "mb.tabCompleted": ["checked_out", "completed"],
   "mb.tabCancelled": ["cancelled", "rejected"],
 };
 
 const STATUS_LABEL: Record<BookingStatus, string> = {
-  pending: "Ожидает подтверждения",
-  confirmed: "Подтверждено",
-  checked_in: "Заселён",
-  checked_out: "Завершено",
-  cancelled: "Отменено",
-  rejected: "Отклонено",
+  pending: "mb.statusPending",
+  confirmed: "mb.statusConfirmed",
+  checked_in: "mb.statusCheckedIn",
+  checked_out: "mb.statusCompleted",
+  completed: "mb.statusCompleted",
+  cancelled: "mb.statusCancelled",
+  rejected: "mb.statusRejected",
 };
 
 const CANCELLABLE: BookingStatus[] = ["pending", "confirmed"];
@@ -49,7 +50,7 @@ const PLACEHOLDER_IMAGE =
 /** A booking enriched with its room + hotel display data. */
 interface BookingView {
   booking: BookingResponse;
-  estate: { id: number; name: string; address: string; cover: string };
+  estate: { id: number; name: string; address: string; cover: string; whatsapp: string };
   roomName: string;
 }
 
@@ -60,7 +61,13 @@ async function enrichBooking(b: BookingResponse): Promise<BookingView> {
     hotel.images.find((i) => i.is_main)?.url ?? hotel.images[0]?.url ?? PLACEHOLDER_IMAGE;
   return {
     booking: b,
-    estate: { id: hotel.id, name: hotel.name, address: hotel.address, cover },
+    estate: {
+      id: hotel.id,
+      name: hotel.name,
+      address: hotel.address,
+      cover,
+      whatsapp: hotel.whatsapp,
+    },
     roomName: room.name,
   };
 }
@@ -106,6 +113,29 @@ export default function BookingsPage() {
       day: "numeric",
       month: "long",
     });
+
+  function downloadReceipt(v: BookingView) {
+    const b = v.booking;
+    const lines = [
+      `StayKG — ${t("mb.receipt")}`,
+      "================================",
+      `${t("hb.hotel")}: ${v.estate.name}`,
+      `${t("hb.room")}: ${v.roomName}`,
+      `${t("hb.dates")}: ${b.date_from} → ${b.date_to}`,
+      `${t("search.guests")}: ${b.guests}`,
+      `${t("mb.total")}: ${Number(b.total_amount).toLocaleString("ru-RU")} ${t("common.kgs")}`,
+      `${t("detail.deposit")}: ${Number(b.deposit_amount).toLocaleString("ru-RU")} ${t("common.kgs")}`,
+      `${t("ad.colStatus")}: ${t(STATUS_LABEL[b.status])}`,
+      `#${b.id}`,
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `receipt-${b.id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function handleCancel(id: number) {
     setCancelling(id);
@@ -185,7 +215,7 @@ export default function BookingsPage() {
                               : "bg-warning/20 text-warning-foreground"
                         }`}
                       >
-                        {td(STATUS_LABEL[b.status])}
+                        {t(STATUS_LABEL[b.status])}
                       </span>
                     </div>
                     <Link
@@ -217,8 +247,22 @@ export default function BookingsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="gap-1.5">
-                        <MessageCircle className="h-4 w-4" /> {t("mb.chat")}
+                      <Button asChild size="sm" variant="outline" className="gap-1.5">
+                        <a
+                          href={`https://wa.me/${estate.whatsapp.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MessageCircle className="h-4 w-4" /> {t("mb.chat")}
+                        </a>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() => downloadReceipt({ booking: b, estate, roomName })}
+                      >
+                        <Download className="h-4 w-4" /> {t("mb.receipt")}
                       </Button>
                       {CANCELLABLE.includes(b.status) && (
                         <Button

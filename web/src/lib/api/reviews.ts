@@ -34,3 +34,11 @@ export async function createReview(
   const { data } = await api.post<ReviewResponse>(`/hotels/${hotelId}/reviews`, payload);
   return data;
 }
+
+/** PATCH /api/v1/reception/reviews/{id}/reply — host replies to a review. */
+export async function replyToReview(reviewId: number, reply: string): Promise<ReviewResponse> {
+  const { data } = await api.patch<ReviewResponse>(`/reception/reviews/${reviewId}/reply`, {
+    reply,
+  });
+  return data;
+}

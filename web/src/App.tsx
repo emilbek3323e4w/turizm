@@ -8,6 +8,7 @@ import CheckoutPage from "./routes/checkout";
 import BookingsPage from "./routes/bookings";
 import FavoritesPage from "./routes/favorites";
 import ProfilePage from "./routes/profile";
+import NotificationsPage from "./routes/notifications";
 
 import HostLayout from "./routes/host";
 import HostDashboard from "./routes/host.index";
@@ -21,19 +22,21 @@ import HostMessages from "./routes/host.messages";
 import HostFinance from "./routes/host.finance";
 import HostSettings from "./routes/host.settings";
 
-import AdminLayout from "./routes/admin";
-import AdminDashboard from "./routes/admin.index";
-import AdminUsers from "./routes/admin.users";
-import AdminHotels from "./routes/admin.hotels";
-import AdminRooms from "./routes/admin.rooms";
-import AdminBookings from "./routes/admin.bookings";
-import AdminReviews from "./routes/admin.reviews";
-import AdminComplaints from "./routes/admin.complaints";
-import AdminCategories from "./routes/admin.categories";
-import AdminAmenities from "./routes/admin.amenities";
-import AdminFinance from "./routes/admin.finance";
-import AdminNotifications from "./routes/admin.notifications";
-import AdminSettings from "./routes/admin.settings";
+// --- Admin panel: isolated under src/admin/, guarded by the `admin` role ---
+import { RequireRole } from "./components/RequireRole";
+import AdminLayout from "./admin/admin";
+import AdminDashboard from "./admin/admin.index";
+import AdminUsers from "./admin/admin.users";
+import AdminHotels from "./admin/admin.hotels";
+import AdminRooms from "./admin/admin.rooms";
+import AdminBookings from "./admin/admin.bookings";
+import AdminReviews from "./admin/admin.reviews";
+import AdminComplaints from "./admin/admin.complaints";
+import AdminCategories from "./admin/admin.categories";
+import AdminAmenities from "./admin/admin.amenities";
+import AdminFinance from "./admin/admin.finance";
+import AdminNotifications from "./admin/admin.notifications";
+import AdminSettings from "./admin/admin.settings";
 
 function NotFound() {
   return (
@@ -68,6 +71,7 @@ export default function App() {
       <Route path="/bookings" element={<BookingsPage />} />
       <Route path="/favorites" element={<FavoritesPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
 
       <Route path="/host" element={<HostLayout />}>
         <Route index element={<HostDashboard />} />
@@ -82,7 +86,14 @@ export default function App() {
         <Route path="settings" element={<HostSettings />} />
       </Route>
 
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={
+          <RequireRole roles={["admin"]}>
+            <AdminLayout />
+          </RequireRole>
+        }
+      >
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="hotels" element={<AdminHotels />} />

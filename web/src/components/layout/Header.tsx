@@ -1,6 +1,7 @@
-import { Link, NavLink } from "react-router-dom";
-import { Bell, Globe, Menu, User, Check } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Bell, Globe, Menu, User, Check, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +13,6 @@ import {
 import { useI18n, languages } from "@/lib/i18n";
 
 function Logo() {
-  const { t } = useI18n();
   return (
     <Link to="/" className="flex items-center gap-2.5">
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[var(--shadow-pop)]">
@@ -26,10 +26,7 @@ function Logo() {
         </svg>
       </div>
       <div className="leading-tight">
-        <div className="font-display text-lg font-extrabold tracking-tight">MEIMAN</div>
-        <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          {t("header.tagline")}
-        </div>
+        <div className="font-display text-lg font-extrabold tracking-tight">StayKG</div>
       </div>
     </Link>
   );
@@ -64,6 +61,13 @@ function LanguageMenu() {
 export function Header() {
   const [open, setOpen] = useState(false);
   const { t } = useI18n();
+  const navigate = useNavigate();
+  const { isAuthenticated, hasRole, signOut } = useAuth();
+
+  async function handleLogout() {
+    await signOut();
+    navigate("/");
+  }
   const nav = [
     { to: "/estates", label: t("nav.estates") },
     { to: "/bookings", label: t("nav.bookings") },
@@ -95,12 +99,15 @@ export function Header() {
         <div className="flex items-center gap-1.5">
           <LanguageMenu />
           <Button
+            asChild
             variant="ghost"
             size="icon"
             className="rounded-full"
             aria-label={t("a11y.notifications")}
           >
-            <Bell className="h-5 w-5" />
+            <Link to="/notifications">
+              <Bell className="h-5 w-5" />
+            </Link>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -112,25 +119,40 @@ export function Header() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link to="/auth">{t("menu.login")}</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/profile">{t("menu.profile")}</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/bookings">{t("menu.myBookings")}</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/favorites">{t("menu.favorites")}</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/host">{t("menu.hostPanel")}</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/admin">{t("menu.adminPanel")}</Link>
-              </DropdownMenuItem>
+              {!isAuthenticated ? (
+                <DropdownMenuItem asChild>
+                  <Link to="/auth">{t("menu.login")}</Link>
+                </DropdownMenuItem>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">{t("menu.profile")}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/bookings">{t("menu.myBookings")}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/favorites">{t("menu.favorites")}</Link>
+                  </DropdownMenuItem>
+                  {hasRole("reception", "admin") && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/host">{t("menu.hostPanel")}</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {hasRole("admin") && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">{t("menu.adminPanel")}</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" /> {t("menu.logout")}
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <Button

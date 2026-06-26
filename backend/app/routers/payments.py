@@ -8,7 +8,7 @@ from app.models.user import User
 
 router = APIRouter(tags=["Payments (User)"])
 
-@router.post("/bookings/{booking_id}/payments", response_model=PaymentResponse)
+@router.post("/bookings/{booking_id}/payments", response_model=PaymentResponse, status_code=201)
 async def create_payment(
     booking_id: int,
     req: PaymentCreate,

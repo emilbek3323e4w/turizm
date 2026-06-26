@@ -41,8 +41,9 @@ class RoomService:
             status=req.status
         )
         await RoomRepository.create(room, db)
+        room_id = room.id  # set by flush() in create(), read before commit
         await db.commit()
-        return room
+        return await RoomRepository.get_by_id_with_relations(room_id, db)
 
     @classmethod
     async def update_room(cls, room_id: int, user_id: int, is_admin: bool, req: RoomUpdate, db: AsyncSession) -> Room:
@@ -52,9 +53,9 @@ class RoomService:
             
         await cls._check_room_ownership(room, user_id, is_admin, db)
         
-        updated_room = await RoomRepository.update(room, req, db)
+        await RoomRepository.update(room, req, db)
         await db.commit()
-        return updated_room
+        return await RoomRepository.get_by_id_with_relations(room_id, db)
 
     @classmethod
     async def delete_room(cls, room_id: int, user_id: int, is_admin: bool, db: AsyncSession):
@@ -96,7 +97,7 @@ class RoomService:
 
         room.status = status
         await db.commit()
-        return room
+        return await RoomRepository.get_by_id_with_relations(room_id, db)
 
     @classmethod
     async def add_image(cls, room_id: int, user_id: int, is_admin: bool, url: str, is_main: bool, db: AsyncSession) -> Image:

@@ -201,7 +201,7 @@ async def check_in_booking(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("reception", "admin"))
 ):
-    return await BookingService.check_in(booking_id, current_user.id, get_is_admin(current_user), db)
+    return await BookingService.check_in_booking(booking_id, current_user.id, get_is_admin(current_user), db)
 
 @router.patch("/bookings/{booking_id}/check-out", response_model=BookingResponse)
 async def check_out_booking(
@@ -209,7 +209,7 @@ async def check_out_booking(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("reception", "admin"))
 ):
-    return await BookingService.check_out(booking_id, current_user.id, get_is_admin(current_user), db)
+    return await BookingService.check_out_booking(booking_id, current_user.id, get_is_admin(current_user), db)
 
 # === Review Reply ===
 @router.patch("/reviews/{review_id}/reply", response_model=ReviewResponse)
