@@ -105,11 +105,16 @@ export default function AdminHotels() {
                   </Button>
                   <Button
                     size="sm"
-                    disabled={busy === e.id}
+                    disabled={busy === e.id || e.status === "approved"}
                     onClick={() => setStatus(e.id, "approved")}
-                    className="h-8 gap-1 bg-success text-success-foreground hover:bg-success/90"
+                    className="h-8 gap-1 bg-success text-success-foreground hover:bg-success/90 disabled:opacity-100"
                   >
-                    <Check className="h-3.5 w-3.5" /> {t("ad.approve")}
+                    {busy === e.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5" />
+                    )}{" "}
+                    {e.status === "approved" ? t("ad.approved") : t("ad.approve")}
                   </Button>
                   <Button
                     size="sm"

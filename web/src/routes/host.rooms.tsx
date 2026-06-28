@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
-import { Plus, Edit2, Trash2, X, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,10 +10,13 @@ import {
   createRoom,
   updateRoom,
   deleteRoom,
+  uploadRoomImage,
+  deleteRoomImage,
   mediaUrl,
   type RoomResponse,
   type RoomType,
   type Hotel,
+  type HotelImage,
 } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
@@ -67,6 +70,11 @@ export default function HostRooms() {
   function onUpdated(room: RoomResponse) {
     setRooms((prev) => prev.map((r) => (r.id === room.id ? room : r)));
     setEditing(null);
+  }
+
+  function onRoomImages(roomId: number, images: HotelImage[]) {
+    setRooms((prev) => prev.map((r) => (r.id === roomId ? { ...r, images } : r)));
+    setEditing((cur) => (cur && cur.id === roomId ? { ...cur, images } : cur));
   }
 
   async function handleDelete(room: RoomResponse) {
@@ -186,6 +194,7 @@ export default function HostRooms() {
           }}
           onCreated={onCreated}
           onUpdated={onUpdated}
+          onRoomImages={onRoomImages}
         />
       )}
     </div>
@@ -200,6 +209,7 @@ function RoomForm({
   onClose,
   onCreated,
   onUpdated,
+  onRoomImages,
 }: {
   hotelId: number;
   hotels: Hotel[];
@@ -208,6 +218,7 @@ function RoomForm({
   onClose: () => void;
   onCreated: (r: RoomResponse) => void;
   onUpdated: (r: RoomResponse) => void;
+  onRoomImages: (roomId: number, images: HotelImage[]) => void;
 }) {
   const { t } = useI18n();
   const [number, setNumber] = useState(editRoom?.room_number ?? "");
@@ -217,8 +228,50 @@ function RoomForm({
   const [adults, setAdults] = useState(editRoom ? String(editRoom.capacity_adults) : "2");
   const [children, setChildren] = useState(editRoom ? String(editRoom.capacity_children) : "0");
   const [description, setDescription] = useState(editRoom?.description ?? "");
+  const [images, setImages] = useState<HotelImage[]>(editRoom?.images ?? []);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleFiles(files: FileList | null) {
+    if (!editRoom || !files || files.length === 0) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const next = [...images];
+      for (const file of Array.from(files)) {
+        const img = await uploadRoomImage(editRoom.id, file, next.length === 0);
+        next.push(img);
+      }
+      setImages(next);
+      onRoomImages(editRoom.id, next);
+    } catch (err) {
+      setError(
+        isAxiosError(err)
+          ? ((err.response?.data as { detail?: string } | undefined)?.detail ?? err.message)
+          : t("ho.deleteError"),
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleRemoveImage(imageId: number) {
+    if (!editRoom) return;
+    setError(null);
+    try {
+      await deleteRoomImage(editRoom.id, imageId);
+      const next = images.filter((i) => i.id !== imageId);
+      setImages(next);
+      onRoomImages(editRoom.id, next);
+    } catch (err) {
+      setError(
+        isAxiosError(err)
+          ? ((err.response?.data as { detail?: string } | undefined)?.detail ?? err.message)
+          : t("ho.deleteError"),
+      );
+    }
+  }
 
   async function handleSave() {
     setError(null);
@@ -349,6 +402,55 @@ function RoomForm({
               placeholder={t("hrm.descPh")}
             />
           </Field>
+        </div>
+
+        <div className="mt-5">
+          <div className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t("ho.photos")}
+          </div>
+          {editRoom ? (
+            <>
+              {images.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-2">
+                  {images.map((img) => (
+                    <div key={img.id} className="group relative">
+                      <img
+                        src={mediaUrl(img.url)}
+                        alt=""
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(img.id)}
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 shadow transition group-hover:opacity-100"
+                        aria-label={t("ho.delete")}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-surface px-4 py-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-accent/40">
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}{" "}
+                {t("ho.uploadPhoto")}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+              </label>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("hrm.photoHint")}</p>
+          )}
         </div>
 
         <div className="mt-8 flex justify-end gap-2 border-t border-border/70 pt-5">

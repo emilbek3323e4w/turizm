@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Bell, Globe, Menu, User, Check, LogOut } from "lucide-react";
+import { Bell, Globe, Menu, User, Check, LogOut, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -115,7 +115,7 @@ export function Header() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
                   <User className="h-4 w-4 text-muted-foreground" />
                 </span>
-                <Menu className="h-3.5 w-3.5 text-muted-foreground" />
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

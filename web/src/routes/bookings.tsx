@@ -8,6 +8,7 @@ import {
   cancelBooking,
   getRoom,
   getHotel,
+  mediaUrl,
   getAccessToken,
   type BookingResponse,
   type BookingStatus,
@@ -57,8 +58,9 @@ interface BookingView {
 async function enrichBooking(b: BookingResponse): Promise<BookingView> {
   const room = await getRoom(b.room_id);
   const hotel = await getHotel(room.hotel_id);
-  const cover =
-    hotel.images.find((i) => i.is_main)?.url ?? hotel.images[0]?.url ?? PLACEHOLDER_IMAGE;
+  const cover = mediaUrl(
+    hotel.images.find((i) => i.is_main)?.url ?? hotel.images[0]?.url ?? PLACEHOLDER_IMAGE,
+  );
   return {
     booking: b,
     estate: {
