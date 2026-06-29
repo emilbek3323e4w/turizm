@@ -70,6 +70,26 @@ export async function deleteRoom(roomId: number): Promise<void> {
   await api.delete(`/reception/rooms/${roomId}`);
 }
 
+/** Upload a room photo (multipart). Returns the created image. */
+export async function uploadRoomImage(
+  roomId: number,
+  file: File,
+  isMain = false,
+): Promise<HotelImage> {
+  const form = new FormData();
+  form.append("file", file);
+  const { data } = await api.post<HotelImage>(`/reception/rooms/${roomId}/images`, form, {
+    params: { is_main: isMain },
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+/** Delete a room photo — DELETE /reception/rooms/{id}/images/{imageId}. */
+export async function deleteRoomImage(roomId: number, imageId: number): Promise<void> {
+  await api.delete(`/reception/rooms/${roomId}/images/${imageId}`);
+}
+
 export interface RoomCalendar {
   room_id: number;
   occupied_periods: { date_from: string; date_to: string }[];

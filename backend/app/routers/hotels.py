@@ -47,9 +47,12 @@ async def search_hotels(
 async def create_hotel(
     req: HotelCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("reception", "admin"))
+    current_user: User = Depends(require_role("user", "reception", "admin"))
 ):
-    """Создание гостиницы (reception/admin). По ТЗ путь: POST /api/v1/hotels."""
+    """Создание гостиницы любым авторизованным пользователем (онбординг хоста).
+
+    Объект создаётся со статусом pending и попадает на модерацию админу;
+    владельцем становится текущий пользователь. По ТЗ путь: POST /api/v1/hotels."""
     return await HotelService.create_hotel(current_user.id, req, db)
 
 @router.put("/{hotel_id}/amenities", response_model=HotelResponse)
@@ -57,9 +60,9 @@ async def set_hotel_amenities(
     hotel_id: int,
     req: HotelAmenitiesUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("reception", "admin"))
+    current_user: User = Depends(require_role("user", "reception", "admin"))
 ):
-    """Замена набора удобств гостиницы (reception/admin)."""
+    """Замена набора удобств гостиницы (владелец/admin; проверка владельца в сервисе)."""
     is_admin = current_user.role == Role.admin
     return await HotelService.set_amenities(hotel_id, current_user.id, is_admin, req.amenity_ids, db)
 
